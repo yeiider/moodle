@@ -1,0 +1,60 @@
+# ===============================================================
+#  Archivo de Configuración de Nixpacks para Moodle en Railway
+# ===============================================================
+# Este archivo asegura que todas las dependencias y extensiones
+# requeridas por Moodle sean instaladas correctamente.
+
+[phases.setup]
+# La sección 'setup' instala todos los paquetes del sistema y de PHP.
+# Hemos incluido todas las extensiones requeridas y recomendadas por Moodle.
+nixPkgs = [
+    # ---- Herramientas Esenciales del Sistema ----
+    "php",
+    "git",
+    "unzip",
+
+    # ---- Extensiones de PHP Requeridas por Moodle ----
+    "phpExtensions.iconv",
+    "phpExtensions.mbstring",
+    "phpExtensions.ctype",
+    "phpExtensions.curl",
+    "phpExtensions.dom",
+    "phpExtensions.fileinfo",
+    "phpExtensions.gd",
+    "phpExtensions.intl",
+    "phpExtensions.json",
+    "phpExtensions.openssl",
+    "phpExtensions.pcre",
+    "phpExtensions.session",
+    "phpExtensions.simplexml",
+    "phpExtensions.spl",
+    "phpExtensions.tokenizer",
+    "phpExtensions.xml",
+    "phpExtensions.xmlreader",
+    "phpExtensions.xmlrpc",
+    "phpExtensions.zip",
+    "phpExtensions.zlib",
+
+    # ---- Extensiones de PHP Recomendadas ----
+    "phpExtensions.soap",   # Para integración con servicios web
+    "phpExtensions.sodium", # Para mayor seguridad de contraseñas
+
+    # ---- Cliente de Base de Datos (¡Elige solo uno!) ----
+    "libmysqlclient",       # Descomenta o mantén esta línea si usas MySQL/MariaDB.
+    # "libpq",              # Descomenta esta línea si usas PostgreSQL y comenta la anterior.
+
+    # ---- Herramientas Adicionales para Funcionalidades de Moodle ----
+    "ghostscript",          # Para generar miniaturas de PDFs en las tareas.
+    "aspell"                # Para la revisión ortográfica en el editor de texto.
+]
+
+[phases.install]
+# Moodle no usa 'composer install' para su núcleo, así que omitimos este paso.
+cmd = "echo 'Omitiendo paso de instalación de Composer...'"
+
+
+[start]
+# El comando 'start' inicia el servidor web.
+# 'apache2-foreground' es el comando estándar en entornos Nixpacks
+# para iniciar Apache de una manera que Railway pueda gestionar.
+cmd = "apache2-foreground"
