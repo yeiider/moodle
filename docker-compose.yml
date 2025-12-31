@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  web:
+    # Build: . le dice a Portainer que construya la imagen usando el Dockerfile del repo
+    build: .
+    container_name: moodle_custom_app
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      - MOODLE_DBTYPE=mariadb
+      - MOODLE_DBHOST=db
+      - MOODLE_DBNAME=moodle
+      - MOODLE_DBUSER=moodleuser
+      - MOODLE_DBPASSWORD=password_seguro
+      - MOODLE_WWWROOT=http://tu-dominio-o-ip
+      - MOODLE_DATAROOT=/var/www/moodledata
+    volumes:
+      # Persistencia de moodledata (archivos subidos por usuarios)
+      - moodledata_vol:/var/www/moodledata
+      # Opcional: Si quieres desarrollar en vivo, descomenta esto,
+      # pero ten cuidado con los permisos de archivo en Portainer.
+      # - ./:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - moodle_net
+      - proxy_network
+  db:
+    image: mariadb:10.11
+    container_name: moodle_custom_db
+    restart: always
+    environment:
+      - MARIADB_DATABASE=moodle
+      - MARIADB_USER=moodleuser
+      - MARIADB_PASSWORD=password_seguro
+      - MARIADB_ROOT_PASSWORD=root_password_super_seguro
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - moodle_net
+
+volumes:
+  moodledata_vol:
+  db_data:
+
+networks:
+  proxy_network:
+    external: true
+  moodle_net:
