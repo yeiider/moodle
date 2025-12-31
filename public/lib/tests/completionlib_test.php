@@ -1467,8 +1467,69 @@ final class completionlib_test extends advanced_testcase {
     }
 
     /**
+     * Data provider for {@see test_clear_criteria}
+     *
+     * @return bool[][]
+     */
+    public static function clear_criteria_provider(): array {
+        return [
+            [false],
+            [true],
+        ];
+    }
+
+    /**
+     * Test clearing criteria for current course
+     *
+     * @param bool $removetypecriteria
+     *
+     * @covers ::clear_criteria
+     * @dataProvider clear_criteria_provider
+     */
+    public function test_clear_criteria(bool $removetypecriteria): void {
+        global $DB;
+
+        $this->setup_data();
+
+        $courseprerequisite = $this->getDataGenerator()->create_course(['enablecompletion' => true]);
+
+        /** @var completion_criteria_self $criteria */
+        $criteria = completion_criteria::factory(['criteriatype' => COMPLETION_CRITERIA_TYPE_SELF]);
+        $criteriadata = (object) [
+            'id' => $courseprerequisite->id,
+            'criteria_self' => 1,
+        ];
+        $criteria->update_config($criteriadata);
+
+        /** @var completion_criteria_course $criteria */
+        $criteria = completion_criteria::factory(['criteriatype' => COMPLETION_CRITERIA_TYPE_COURSE]);
+        $criteriadata = (object) [
+            'id' => $this->course->id,
+            'criteria_course' => [$courseprerequisite->id],
+        ];
+        $criteria->update_config($criteriadata);
+
+        // Sanity test.
+        $this->assertTrue($DB->record_exists('course_completion_criteria', ['course' => $courseprerequisite->id]));
+
+        $completion = new completion_info($courseprerequisite);
+        $completion->clear_criteria($removetypecriteria);
+
+        // There should be no criteria data for the course.
+        $this->assertFalse($DB->record_exists('course_completion_criteria', ['course' => $courseprerequisite->id]));
+
+        // Course type criteria from other courses that refer to the course.
+        $this->assertEquals(!$removetypecriteria, $DB->record_exists('course_completion_criteria', [
+            'course' => $this->course->id,
+            'criteriatype' => COMPLETION_CRITERIA_TYPE_COURSE,
+            'courseinstance' => $courseprerequisite->id,
+        ]));
+    }
+
+    /**
      * Test that data is cleaned up when we delete courses that are set as completion criteria for other courses
      *
+     * @covers ::clear_criteria
      * @covers ::delete_course_completion_data
      * @covers ::delete_all_completion_data
      */
@@ -1479,13 +1540,12 @@ final class completionlib_test extends advanced_testcase {
 
         $courseprerequisite = $this->getDataGenerator()->create_course(['enablecompletion' => true]);
 
+        /** @var completion_criteria_course $criteria */
+        $criteria = completion_criteria::factory(['criteriatype' => COMPLETION_CRITERIA_TYPE_COURSE]);
         $criteriadata = (object) [
             'id' => $this->course->id,
             'criteria_course' => [$courseprerequisite->id],
         ];
-
-        /** @var completion_criteria_course $criteria */
-        $criteria = completion_criteria::factory(['criteriatype' => COMPLETION_CRITERIA_TYPE_COURSE]);
         $criteria->update_config($criteriadata);
 
         // Sanity test.
@@ -2234,6 +2294,82 @@ final class completionlib_test extends advanced_testcase {
             $nonexistinguserid = 123;
             $this->assertEquals($expectedcount, $completion->count_modules_completed($nonexistinguserid));
         }
+    }
+
+    /**
+     * Disabled activities are not returned.
+     *
+     * @covers ::get_criteria
+     */
+    public function test_disabled_activities_are_not_returned(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $assignmodule = 'assign';
+        $bookmodule = 'book';
+        $pagemodule = 'page';
+
+        // Create a course with enabled completion tracking.
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+
+        // Add activities to the course and set completion conditions for the activities.
+        $assign = $this->getDataGenerator()->create_module(
+            $assignmodule,
+            ['course' => $course->id, 'completion_assign' => COMPLETION_TRACKING_MANUAL],
+        );
+
+        $book = $this->getDataGenerator()->create_module(
+            $bookmodule,
+            ['course' => $course->id, 'completion_book' => COMPLETION_TRACKING_MANUAL],
+        );
+
+        $page = $this->getDataGenerator()->create_module(
+            $pagemodule,
+            ['course' => $course->id, 'completion_page' => COMPLETION_TRACKING_MANUAL],
+        );
+
+        // Add the activities as course completion criteria.
+        $DB->insert_record(
+            'course_completion_criteria',
+            [
+                'course' => $course->id,
+                'criteriatype' => COMPLETION_CRITERIA_TYPE_ACTIVITY,
+                'module' => $assignmodule,
+                'moduleinstance' => $assign->cmid,
+            ],
+        );
+
+        $DB->insert_record(
+            'course_completion_criteria',
+            [
+                'course' => $course->id,
+                'criteriatype' => COMPLETION_CRITERIA_TYPE_ACTIVITY,
+                'module' => $bookmodule,
+                'moduleinstance' => $book->cmid,
+            ],
+        );
+
+        $DB->insert_record(
+            'course_completion_criteria',
+            [
+                'course' => $course->id,
+                'criteriatype' => COMPLETION_CRITERIA_TYPE_ACTIVITY,
+                'module' => $pagemodule,
+                'moduleinstance' => $page->cmid,
+            ],
+        );
+
+        // Disable the book module.
+        $manager = core_plugin_manager::resolve_plugininfo_class('mod');
+        $manager::enable_plugin($bookmodule, 0);
+
+        // Calling get_criteria() should return only the 2 enabled activities.
+        // The disabled module should be filtered out.
+        $completioninfo = new completion_info($course);
+
+        $criteria = $completioninfo->get_criteria(COMPLETION_CRITERIA_TYPE_ACTIVITY);
+
+        $this->assertCount(2, $criteria);
     }
 }
 

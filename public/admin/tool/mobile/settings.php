@@ -28,11 +28,10 @@ defined('MOODLE_INTERNAL') || die();
 
 use core_admin\local\settings\autocomplete;
 
-if ($hassiteconfig) {
-
+if ($hassiteconfig || has_capability('moodle/site:configview', context_system::instance())) {
     // We should wait to the installation to finish since we depend on some configuration values that are set once
     // the admin user profile is configured.
-    if (!during_initial_install()) {
+    if ($hassiteconfig && !during_initial_install()) {
         $enablemobiledocurl = new moodle_url(get_docs_url('Enable_mobile_web_services'));
         $enablemobiledoclink = html_writer::link($enablemobiledocurl, new lang_string('documentation'));
         $default = is_https() ? 1 : 0;
@@ -78,7 +77,7 @@ if ($hassiteconfig) {
             'mobileappsubscription',
             new lang_string('mobileappsubscription', 'tool_mobile'),
             "$CFG->wwwroot/$CFG->admin/tool/mobile/subscription.php",
-            'moodle/site:config',
+            'moodle/site:configview',
             $hideappsubscription
         )
     );
@@ -230,9 +229,25 @@ if ($hassiteconfig) {
                 new lang_string('disabledfeatures', 'tool_mobile'),
                 new lang_string('disabledfeatures_desc', 'tool_mobile'), array(), $options));
 
-    $temp->add(new admin_setting_configtextarea('tool_mobile/custommenuitems',
-                new lang_string('custommenuitems', 'tool_mobile'),
-                new lang_string('custommenuitems_desc', 'tool_mobile'), '', PARAM_RAW, '50', '10'));
+    $temp->add(new admin_setting_configtextarea(
+        'tool_mobile/custommenuitems',
+        new lang_string('custommenuitems', 'tool_mobile'),
+        new lang_string('custommenuitems_desc', 'tool_mobile'),
+        '',
+        PARAM_RAW,
+        '50',
+        '10',
+    ));
+
+    $temp->add(new admin_setting_configtextarea(
+        'tool_mobile/customusermenuitems',
+        new lang_string('customusermenuitems', 'tool_mobile'),
+        new lang_string('customusermenuitems_desc', 'tool_mobile'),
+        '',
+        PARAM_RAW,
+        '50',
+        '10',
+    ));
 
     // File type exclusionlist.
     $choices = [];

@@ -17,14 +17,12 @@
 namespace core_webservice;
 
 use core_external\external_api;
-use externallib_advanced_testcase;
 use core\tests\session\mock_handler;
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/webservice/externallib.php');
-require_once($CFG->dirroot . '/webservice/tests/helpers.php');
 
 /**
  * External course functions unit tests
@@ -35,7 +33,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @copyright  2012 Paul Charsley
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class externallib_test extends externallib_advanced_testcase {
+final class externallib_test extends \core_external\tests\externallib_testcase {
     #[\Override]
     public function setUp(): void {
         // Calling parent is good, always
@@ -94,6 +92,16 @@ final class externallib_test extends externallib_advanced_testcase {
         $externaltoken->name = \core_external\util::generate_token_name();
         $DB->insert_record('external_tokens', $externaltoken);
 
+        // Add fake registration.
+        $hub = new \stdClass();
+        $hub->token = get_site_identifier() . date('Ymdhis');
+        $hub->secret = $hub->token;
+        $hub->huburl = HUB_MOODLEORGHUBURL;
+        $hub->hubname = 'moodle';
+        $hub->confirmed = 1;
+        $hub->timemodified = time();
+        $hub->id = $DB->insert_record('registration_hubs', $hub);
+
         $siteinfo = \core_webservice_external::get_site_info();
 
         // We need to execute the return values cleaning process to simulate the web service server.
@@ -151,6 +159,9 @@ final class externallib_test extends externallib_advanced_testcase {
         $this->assertEquals($CFG->calendartype, $siteinfo['sitecalendartype']);
         $this->assertEquals($user['theme'], $siteinfo['theme']);
         $this->assertEquals($USER->policyagreed, $siteinfo['policyagreed']);
+        $this->assertFalse($siteinfo['usercanchangeconfig']);
+        $this->assertFalse($siteinfo['usercanviewconfig']);
+        $this->assertArrayNotHasKey('sitesecret', $siteinfo);
 
         // Now as admin.
         $this->setAdminUser();
@@ -203,6 +214,11 @@ final class externallib_test extends externallib_advanced_testcase {
         $siteinfo = external_api::clean_returnvalue(\core_webservice_external::get_site_info_returns(), $siteinfo);
         $this->assertEquals($CFG->limitconcurrentlogins, $siteinfo['limitconcurrentlogins']);
         $this->assertEquals(1, $siteinfo['usersessionscount']);
+        $this->assertTrue($siteinfo['usercanchangeconfig']);
+        $this->assertTrue($siteinfo['usercanviewconfig']);
+        $this->assertArrayHasKey('sitesecret', $siteinfo);
+        $this->assertNotEmpty($siteinfo['sitesecret']);
+        $this->assertEquals($hub->secret, $siteinfo['sitesecret']);
     }
 
     /**

@@ -761,6 +761,35 @@ function format_string($string, $striplinks = true, $options = null) {
 }
 
 /**
+ * Encode all dangerous characters and named html entities as
+ * numeric html entities.
+ *
+ * The result of this function can be used safely in both {{ }} and {{{ }}} tags in Mustache templates
+ * because it is not modified by s() function and it is equivalent to htmlentities() escaping.
+ *
+ * @param string|null $string
+ * @return string|null html string without any tags or dangerous characters
+ */
+function clean_string(?string $string): ?string {
+    if ($string === null || $string === '') {
+        return $string;
+    }
+
+    $replace = [
+        '"' => '&#34;',
+        '\'' => '&#39;',
+        '<' => '&#60;',
+        '>' => '&#62;',
+    ];
+    $string = strtr($string, $replace);
+    $string = preg_replace('/&(?![a-zA-Z0-9#]{1,8};)/', '&#38;', $string);
+
+    $string = core_text::entities_named_to_numeric($string);
+
+    return $string;
+}
+
+/**
  * Given a string, performs a negative lookahead looking for any ampersand character
  * that is not followed by a proper HTML entity. If any is found, it is replaced
  * by &amp;. The string is then returned.
@@ -1824,7 +1853,7 @@ function print_group_picture($group, $courseid, $large = false, $return = false,
 
     $context = context_course::instance($courseid);
 
-    $groupname = s($group->name);
+    $groupname = format_string($group->name, true, ['context' => $context, 'escape' => false]);
     $pictureimage = html_writer::img($pictureurl, $groupname, ['title' => $groupname]);
 
     $output = '';
@@ -2676,7 +2705,9 @@ function get_formatted_help_string($identifier, $component, $ajax = false, $a = 
 
         $helplink = $identifier . '_link';
         if ($sm->string_exists($helplink, $component)) {  // Link to further info in Moodle docs.
-            $link = get_string($helplink, $component);
+            // The link is stored in a language file but should not be translated, use value for English.
+            $link = $sm->get_string($helplink, $component, null, 'en');
+            // The text 'More help' should be in the current language.
             $linktext = get_string('morehelp');
 
             $data->doclink = new stdClass();

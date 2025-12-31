@@ -336,6 +336,7 @@ class icon_system_fontawesome extends icon_system_font {
             'core:i/stats' => 'fa-chart-line',
             'core:i/switch' => 'fa-right-left',
             'core:i/switchrole' => 'fa-people-arrows',
+            'core:i/tip' => 'fa-lightbulb text-warning',
             'core:i/trash' => 'fa-trash-can',
             'core:i/twoway' => 'fa-arrows-left-right',
             'core:i/unchecked' => 'fa-regular fa-square',
@@ -528,6 +529,8 @@ class icon_system_fontawesome extends icon_system_font {
                 'core:e/insert_col_before',
                 'core:e/split_cells',
                 'core:e/text_color',
+                'core:e/text_highlight',
+                'core:e/text_highlight_picker',
                 'core:t/locktime',
             ],
         );

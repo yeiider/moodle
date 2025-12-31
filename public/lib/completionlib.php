@@ -399,50 +399,60 @@ class completion_info {
     /**
      * Get course completion criteria
      *
-     * @param int $criteriatype Specific criteria type to return (optional)
+     * @param int|null $criteriatype Specific criteria type to return (optional)
+     * @return array
      */
-    public function get_criteria($criteriatype = null) {
-
-        // Fill cache if empty
+    public function get_criteria(?int $criteriatype = null): array {
+        // Fill cache if empty.
         if (!is_array($this->criteria)) {
             global $DB;
 
-            $params = array(
-                'course'    => $this->course->id
-            );
+            $params = ['course' => $this->course->id];
 
-            // Load criteria from database
-            $records = (array)$DB->get_records('course_completion_criteria', $params);
+            // Load criteria from database.
+            $records = $DB->get_records('course_completion_criteria', $params);
 
-            // Order records so activities are in the same order as they appear on the course view page.
-            if ($records) {
-                $activitiesorder = array_keys(get_fast_modinfo($this->course)->get_cms());
-                usort($records, function ($a, $b) use ($activitiesorder) {
-                    $aidx = ($a->criteriatype == COMPLETION_CRITERIA_TYPE_ACTIVITY) ?
-                        array_search($a->moduleinstance, $activitiesorder) : false;
-                    $bidx = ($b->criteriatype == COMPLETION_CRITERIA_TYPE_ACTIVITY) ?
-                        array_search($b->moduleinstance, $activitiesorder) : false;
-                    if ($aidx === false || $bidx === false || $aidx == $bidx) {
-                        return 0;
-                    }
-                    return ($aidx < $bidx) ? -1 : 1;
-                });
+            if (empty($records)) {
+                return [];
             }
 
-            // Build array of criteria objects
-            $this->criteria = array();
+            // Order records so activities are in the same order as they appear on the course view page.
+            $activitiesorder = array_keys(get_fast_modinfo($this->course)->get_cms());
+
+            // Remove disabled modules.
+            foreach ($records as $key => $record) {
+                if ($record->criteriatype == COMPLETION_CRITERIA_TYPE_ACTIVITY) {
+                    if (!in_array($record->moduleinstance, $activitiesorder)) {
+                        unset($records[$key]);
+                    }
+                }
+            }
+
+            usort($records, function ($a, $b) use ($activitiesorder) {
+                $aidx = ($a->criteriatype == COMPLETION_CRITERIA_TYPE_ACTIVITY) ?
+                    array_search($a->moduleinstance, $activitiesorder) : false;
+                $bidx = ($b->criteriatype == COMPLETION_CRITERIA_TYPE_ACTIVITY) ?
+                    array_search($b->moduleinstance, $activitiesorder) : false;
+                if ($aidx === false || $bidx === false || $aidx == $bidx) {
+                    return 0;
+                }
+                return ($aidx < $bidx) ? -1 : 1;
+            });
+
+            // Build array of criteria objects.
+            $this->criteria = [];
             foreach ($records as $record) {
                 $this->criteria[$record->id] = completion_criteria::factory((array)$record);
             }
         }
 
-        // If after all criteria
+        // If after all criteria.
         if ($criteriatype === null) {
             return $this->criteria;
         }
 
-        // If we are only after a specific criteria type
-        $criteria = array();
+        // If we are only after a specific criteria type.
+        $criteria = [];
         foreach ($this->criteria as $criterion) {
 
             if ($criterion->criteriatype != $criteriatype) {
@@ -478,17 +488,23 @@ class completion_info {
 
     /**
      * Clear old course completion criteria
+     *
+     * @param bool $removetypecriteria Also remove course type criteria from other courses that refer to the current course
      */
-    public function clear_criteria() {
+    public function clear_criteria(bool $removetypecriteria = true): void {
         global $DB;
 
+        $select = 'course = :course';
+        $params = ['course' => $this->course->id];
+
         // Remove completion criteria records for the course itself, and any records that refer to the course.
-        $select = 'course = :course OR (criteriatype = :type AND courseinstance = :courseinstance)';
-        $params = [
-            'course' => $this->course_id,
-            'type' => COMPLETION_CRITERIA_TYPE_COURSE,
-            'courseinstance' => $this->course_id,
-        ];
+        if ($removetypecriteria) {
+            $select .= ' OR (criteriatype = :type AND courseinstance = :courseinstance)';
+            $params = array_merge($params, [
+                'type' => COMPLETION_CRITERIA_TYPE_COURSE,
+                'courseinstance' => $this->course_id,
+            ]);
+        }
 
         $DB->delete_records_select('course_completion_criteria', $select, $params);
         $DB->delete_records('course_completion_aggr_methd', array('course' => $this->course_id));
