@@ -9,7 +9,7 @@ services:
     ports:
       - "8110:80"
     environment:
-        - MOODLE_URL=http://tu-ip-o-dominio
+        - MOODLE_URL=https://moodle.goline.com.co
         - MOODLE_DB_HOST=db
         - MOODLE_DB_NAME=moodle
         - MOODLE_DB_USER=moodleuser
