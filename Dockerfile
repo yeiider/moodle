@@ -1,7 +1,7 @@
-# CAMBIO IMPORTANTE: Usamos PHP 8.3 para que sea compatible con el Moodle actual
+# Usamos PHP 8.3 (Requerido para Moodle Dev)
 FROM php:8.3-apache
 
-# ... (Tus instalaciones de librerías y extensiones siguen igual aquí) ...
+# Instalación de librerías
 RUN apt-get update && apt-get install -y \
     git unzip libzip-dev libicu-dev libpng-dev libjpeg-dev \
     libfreetype6-dev libxml2-dev libonig-dev libxslt1-dev acl \
@@ -15,14 +15,17 @@ RUN echo "max_input_vars = 5000" >> /usr/local/etc/php/conf.d/moodle-reqs.ini \
 
 RUN a2enmod rewrite
 
+# --- CORRECCIÓN APACHE PARA MOODLE 5 (NUEVA ESTRUCTURA) ---
+# Cambiamos la carpeta pública de /html a /html/public
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+# ---------------------------------------------------------
+
 COPY . /var/www/html/
 
-# --- NUEVO: CONFIGURACIÓN DEL ENTRYPOINT ---
-# Copiamos el script
 COPY docker-entrypoint.sh /usr/local/bin/
-
-# Le damos permisos de ejecución
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Establecemos el script como el punto de entrada
 ENTRYPOINT ["docker-entrypoint.sh"]
