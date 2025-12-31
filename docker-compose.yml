@@ -7,7 +7,7 @@ services:
     container_name: moodle_custom_app
     restart: always
     ports:
-      - "80:80"
+      - "8110:80"
     environment:
       - MOODLE_DBTYPE=mariadb
       - MOODLE_DBHOST=db
