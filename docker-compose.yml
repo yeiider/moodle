@@ -9,13 +9,16 @@ services:
     ports:
       - "8110:80"
     environment:
-      - MOODLE_DBTYPE=mariadb
-      - MOODLE_DBHOST=db
-      - MOODLE_DBNAME=moodle
-      - MOODLE_DBUSER=moodleuser
-      - MOODLE_DBPASSWORD=password_seguro
-      - MOODLE_WWWROOT=http://tu-dominio-o-ip
-      - MOODLE_DATAROOT=/var/www/moodledata
+        - MOODLE_URL=http://tu-ip-o-dominio
+        - MOODLE_DB_HOST=db
+        - MOODLE_DB_NAME=moodle
+        - MOODLE_DB_USER=moodleuser
+        - MOODLE_DB_PASSWORD=password_seguro
+        - MOODLE_SITE_FULLNAME=Moodle
+        - MOODLE_SITE_SHORTNAME=Instituto
+        - MOODLE_ADMIN_USER=admin
+        - MOODLE_ADMIN_PASSWORD=Admin123!
+        - MOODLE_ADMIN_EMAIL=admin@tuisp.com
     volumes:
       # Persistencia de moodledata (archivos subidos por usuarios)
       - moodledata_vol:/var/www/moodledata
