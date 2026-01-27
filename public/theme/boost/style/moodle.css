@@ -28455,6 +28455,26 @@ blockquote {
   border-color: #8f959e;
 }
 
+/* Loading icon */
+.loading-icon.overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 3rem;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+.loading-icon.overlay .icon {
+  width: 40px;
+  height: 32px;
+  max-width: 40px;
+  max-height: 32px;
+  font-size: 32px;
+}
+
 .action-menu .dropdown-toggle {
   text-decoration: none;
   display: inline-block;
@@ -31258,6 +31278,29 @@ table.calendartable caption {
   }
   .mod-indent-huge {
     width: 480px;
+  }
+}
+/* Temporary visual highlight for anchors. */
+[id^=section-]:target {
+  animation: highlight-fade 2s ease-in-out;
+}
+
+body:not(.editing) [id^=module-]:target, body.editing [id^=module-]:target .activity-item {
+  animation: highlight-fade 2s ease-in-out;
+}
+
+@keyframes highlight-fade {
+  0% {
+    border-radius: 1rem;
+    outline: 2px solid #0f6cbf;
+  }
+  70% {
+    border-radius: 1rem;
+    outline: 2px solid #0f6cbf;
+  }
+  100% {
+    border-radius: 1rem;
+    outline: 2px solid transparent;
   }
 }
 /*
@@ -37348,17 +37391,6 @@ table .sticky-column {
   position: sticky;
   left: 0;
   background-color: inherit;
-}
-
-.table-dynamic > .loading-icon {
-  position: absolute;
-  left: calc(50% - 1.5rem);
-  top: 200px;
-}
-.table-dynamic > .loading-icon .icon {
-  max-height: 3rem;
-  max-width: 3rem;
-  font-size: 3rem;
 }
 
 /**
