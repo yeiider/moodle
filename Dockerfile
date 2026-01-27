@@ -1,16 +1,15 @@
-# Usamos PHP 8.3 (Requerido para Moodle 5 Dev)
+# Usamos PHP 8.3
 FROM php:8.3-apache
 
-# 1. Instalación de librerías del sistema
-# CORRECCIÓN: Usamos 'libjpeg62-turbo-dev' para compatibilidad con Debian 12/PHP 8.3
+# 1. Instalación de librerías (NOMBRES CORREGIDOS PARA DEBIAN 12)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     unzip \
     libzip-dev \
     libicu-dev \
     libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
+    libjpeg-dev \
+    libfreetype-dev \
     libxml2-dev \
     libonig-dev \
     libxslt1-dev \
@@ -18,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Configuración de extensiones PHP
-# Configurar GD con soporte para imágenes
+# Nota: --with-jpeg funciona bien con libjpeg-dev
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
     gd \
@@ -29,6 +28,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     opcache \
     exif \
     xsl
+
 
 # 3. Configuración de límites de PHP para Moodle
 RUN echo "max_input_vars = 5000" >> /usr/local/etc/php/conf.d/moodle-reqs.ini \

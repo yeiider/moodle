@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
   web:
-    # Build: . le dice a Portainer que construya la imagen usando el Dockerfile del repo
     build: .
     container_name: moodle_custom_app
     restart: always
