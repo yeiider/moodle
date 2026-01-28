@@ -8,33 +8,36 @@ services:
     ports:
       - "8110:80"
     environment:
-      - MOODLE_URL=${MOODLE_URL}
-      - MOODLE_DB_HOST=${MOODLE_DB_HOST}
-      - MOODLE_DB_NAME=${MOODLE_DB_NAME}
-      - MOODLE_DB_USER=${MOODLE_DB_USER}
-      - MOODLE_DB_PASSWORD=${MOODLE_DB_PASSWORD}
-      - MOODLE_SITE_FULLNAME=${MOODLE_SITE_FULLNAME}
-      - MOODLE_SITE_SHORTNAME=${MOODLE_SITE_SHORTNAME}
-      - MOODLE_ADMIN_USER=${MOODLE_ADMIN_USER}
-      - MOODLE_ADMIN_PASSWORD=${MOODLE_ADMIN_PASSWORD}
-      - MOODLE_ADMIN_EMAIL=${MOODLE_ADMIN_EMAIL}
+        - MOODLE_URL=${MOODLE_URL}
+        - MOODLE_DB_HOST=db
+        - MOODLE_DB_NAME=moodle
+        - MOODLE_DB_USER=moodleuser
+        - MOODLE_DB_PASSWORD=password_seguro
+        - MOODLE_SITE_FULLNAME=Moodle
+        - MOODLE_SITE_SHORTNAME=Instituto
+        - MOODLE_ADMIN_USER=admin
+        - MOODLE_ADMIN_PASSWORD=Admin123!
+        - MOODLE_ADMIN_EMAIL=admin@tuisp.com
     volumes:
+      # Persistencia de moodledata (archivos subidos por usuarios)
       - moodledata_vol:/var/www/moodledata
+      # Opcional: Si quieres desarrollar en vivo, descomenta esto,
+      # pero ten cuidado con los permisos de archivo en Portainer.
+      # - ./:/var/www/html
     depends_on:
       - db
     networks:
       - moodle_net
       - proxy_network
-
   db:
     image: mariadb:10.11
     container_name: moodle_custom_db
     restart: always
     environment:
-      - MARIADB_DATABASE=${MOODLE_DB_NAME}
-      - MARIADB_USER=${MOODLE_DB_USER}
-      - MARIADB_PASSWORD=${MOODLE_DB_PASSWORD}
-      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=moodle
+      - MARIADB_USER=moodleuser
+      - MARIADB_PASSWORD=password_seguro
+      - MARIADB_ROOT_PASSWORD=root_password_super_seguro
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -72,6 +75,7 @@ services:
 volumes:
   moodledata_vol:
   db_data:
+
 
 networks:
   proxy_network:
