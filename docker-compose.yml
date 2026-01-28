@@ -8,7 +8,7 @@ services:
     ports:
       - "8110:80"
     environment:
-        - MOODLE_URL=http://ibmm.iumec.org
+        - MOODLE_URL=https://midominio.com
         - MOODLE_DB_HOST=db
         - MOODLE_DB_NAME=moodle
         - MOODLE_DB_USER=moodleuser
@@ -43,6 +43,37 @@ services:
     networks:
       - moodle_net
 
+  backup:
+    image: offen/docker-volume-backup:latest
+    container_name: moodle_backup
+    restart: always
+    environment:
+      # 1. Configuración de S3 (Donde se guardará)
+      - AWS_ACCESS_KEY_ID=TU_ACCESS_KEY
+      - AWS_SECRET_ACCESS_KEY=TU_SECRET_KEY
+      - AWS_S3_BUCKET_NAME=nombre-de-tu-bucket-moodle
+      # Si usas AWS usa: s3.amazonaws.com
+      # Si usas otro, pon su endpoint (ej. s3.wasabisys.com)
+      - AWS_ENDPOINT=https://s3.amazonaws.com
+      - AWS_S3_PATH=backup-moodle-isp
+
+      # 2. Programación (Ejemplo: Todos los días a las 3:00 AM)
+      - BACKUP_CRON_EXPRESSION=0 3 * * *
+      - BACKUP_FILENAME=backup-moodle-%Y-%m-%dT%H-%M-%S.tar.gz
+      - BACKUP_RETENTION_DAYS=7
+
+      # 3. EL TRUCO DE MAGIA: Script para volcar la DB antes de comprimir
+      # Esto instala el cliente mariadb y hace el dump a la carpeta que se va a subir
+      - BACKUP_PRERUN_SCRIPT=apk add --no-cache mariadb-client && mysqldump -h db -u $MOODLE_DB_USER -p$MOODLE_DB_PASSWORD $MOODLE_DB_NAME > /backup/source/db_dump.sql
+
+    volumes:
+      # Montamos la carpeta de datos de Moodle para respaldarla
+      - moodledata_vol:/backup/source/moodledata:ro
+      # Montamos la zona horaria para que el cron sepa qué hora es
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - moodle-net
 volumes:
   moodledata_vol:
   db_data:
