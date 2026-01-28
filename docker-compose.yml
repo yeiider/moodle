@@ -76,7 +76,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
-      - moodle-net
+      - moodle_net
 volumes:
   moodledata_vol:
   db_data:
