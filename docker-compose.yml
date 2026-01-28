@@ -8,28 +8,24 @@ services:
     ports:
       - "8110:80"
     environment:
-        - MOODLE_URL=${MOODLE_URL}
-        - MOODLE_DB_HOST=${MOODLE_DB_HOST}
-        - MOODLE_DB_NAME=${MOODLE_DB_NAME}
-        - MOODLE_DB_USER=${MOODLE_DB_USER}
-        - MOODLE_DB_PASSWORD=${MOODLE_DB_PASSWORD}
-        - MOODLE_SITE_FULLNAME=${MOODLE_SITE_FULLNAME}
-        - MOODLE_SITE_SHORTNAME=${MOODLE_SITE_SHORTNAME}
-        - MOODLE_ADMIN_USER=${MOODLE_ADMIN_USER}
-        - MOODLE_ADMIN_PASSWORD=${MOODLE_ADMIN_PASSWORD}
-        - MOODLE_ADMIN_EMAIL=${MOODLE_ADMIN_EMAIL}
-
+      - MOODLE_URL=${MOODLE_URL}
+      - MOODLE_DB_HOST=${MOODLE_DB_HOST}
+      - MOODLE_DB_NAME=${MOODLE_DB_NAME}
+      - MOODLE_DB_USER=${MOODLE_DB_USER}
+      - MOODLE_DB_PASSWORD=${MOODLE_DB_PASSWORD}
+      - MOODLE_SITE_FULLNAME=${MOODLE_SITE_FULLNAME}
+      - MOODLE_SITE_SHORTNAME=${MOODLE_SITE_SHORTNAME}
+      - MOODLE_ADMIN_USER=${MOODLE_ADMIN_USER}
+      - MOODLE_ADMIN_PASSWORD=${MOODLE_ADMIN_PASSWORD}
+      - MOODLE_ADMIN_EMAIL=${MOODLE_ADMIN_EMAIL}
     volumes:
-      # Persistencia de moodledata (archivos subidos por usuarios)
       - moodledata_vol:/var/www/moodledata
-      # Opcional: Si quieres desarrollar en vivo, descomenta esto,
-      # pero ten cuidado con los permisos de archivo en Portainer.
-      # - ./:/var/www/html
     depends_on:
       - db
     networks:
       - moodle_net
       - proxy_network
+
   db:
     image: mariadb:10.11
     container_name: moodle_custom_db
@@ -52,26 +48,27 @@ services:
       - db
       - web
     environment:
+      # Credenciales AWS S3
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
-      # 2. Programación (Ejemplo: Todos los días a las 3:00 AM)
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      # Variables necesarias para el script de dump (FALTABAN AQUÍ)
+      - MOODLE_DB_USER=${MOODLE_DB_USER}
+      - MOODLE_DB_PASSWORD=${MOODLE_DB_PASSWORD}
+      - MOODLE_DB_NAME=${MOODLE_DB_NAME}
+      # Configuración Backup
       - BACKUP_CRON_EXPRESSION=0 3 * * *
       - BACKUP_FILENAME=backup-moodle-%Y-%m-%dT%H-%M-%S.tar.gz
       - BACKUP_RETENTION_DAYS=7
-
-      # 3. EL TRUCO DE MAGIA: Script para volcar la DB antes de comprimir
-      # Esto instala el cliente mariadb y hace el dump a la carpeta que se va a subir
       - BACKUP_PRERUN_SCRIPT=apk add --no-cache mariadb-client && mysqldump -h db -u $MOODLE_DB_USER -p$MOODLE_DB_PASSWORD $MOODLE_DB_NAME > /backup/source/db_dump.sql
-
     volumes:
-      # Montamos la carpeta de datos de Moodle para respaldarla
       - moodledata_vol:/backup/source/moodledata:ro
-      # Montamos la zona horaria para que el cron sepa qué hora es
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
       - moodle_net
+
 volumes:
   moodledata_vol:
   db_data:
