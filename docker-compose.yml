@@ -9,10 +9,10 @@ services:
       - "8110:80"
     environment:
       - MOODLE_URL=${MOODLE_URL}
-      - MOODLE_DB_HOST=db
-      - MOODLE_DB_NAME=moodle
-      - MOODLE_DB_USER=moodleuser
-      - MOODLE_DB_PASSWORD=passwordRootMoodle
+      - MOODLE_DB_HOST=${MOODLE_DB_HOST}
+      - MOODLE_DB_NAME=${MOODLE_DB_NAME}
+      - MOODLE_DB_USER=${MOODLE_DB_USER}
+      - MOODLE_DB_PASSWORD=${MOODLE_DB_PASSWORD}
       - MOODLE_SITE_FULLNAME=${MOODLE_SITE_FULLNAME}
       - MOODLE_SITE_SHORTNAME=${MOODLE_SITE_SHORTNAME}
       - MOODLE_ADMIN_USER=${MOODLE_ADMIN_USER}
@@ -31,10 +31,10 @@ services:
     container_name: moodle_custom_db
     restart: always
     environment:
-      - MARIADB_DATABASE=moodle
-      - MARIADB_USER=moodleuser
-      - MARIADB_PASSWORD=passwordRootMoodle
-      - MARIADB_ROOT_PASSWORD=passwordRootMoodle
+      - MARIADB_DATABASE=${MOODLE_DB_NAME}
+      - MARIADB_USER=${MOODLE_DB_USER}
+      - MARIADB_PASSWORD=${MOODLE_DB_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -54,9 +54,9 @@ services:
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       # Variables necesarias para el script de dump (FALTABAN AQUÍ)
-      - MOODLE_DB_USER=moodleuser
-      - MOODLE_DB_PASSWORD=passwordRootMoodle
-      - MOODLE_DB_NAME=moodle
+      - MOODLE_DB_USER=${MOODLE_DB_USER}
+      - MOODLE_DB_PASSWORD=${MOODLE_DB_PASSWORD}
+      - MOODLE_DB_NAME=${MOODLE_DB_NAME}
       # Configuración Backup
       - BACKUP_CRON_EXPRESSION=0 3 * * *
       - BACKUP_FILENAME=backup-moodle-%Y-%m-%dT%H-%M-%S.tar.gz
