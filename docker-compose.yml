@@ -37,7 +37,7 @@ services:
     environment:
       - MARIADB_DATABASE=moodle
       - MARIADB_USER=${MOODLE_DB_USER}
-      - MARIADB_PASSWORD=${MOODLE_DB_USER}
+      - MARIADB_PASSWORD=${MOODLE_DB_PASSWORD}
       - MARIADB_ROOT_PASSWORD=${MOODLE_DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
