@@ -8,16 +8,17 @@ services:
     ports:
       - "8110:80"
     environment:
-        - MOODLE_URL=https://midominio.com
-        - MOODLE_DB_HOST=db
-        - MOODLE_DB_NAME=moodle
-        - MOODLE_DB_USER=moodleuser
-        - MOODLE_DB_PASSWORD=password_seguro
-        - MOODLE_SITE_FULLNAME=Moodle
-        - MOODLE_SITE_SHORTNAME=Instituto
-        - MOODLE_ADMIN_USER=admin
-        - MOODLE_ADMIN_PASSWORD=Admin123!
-        - MOODLE_ADMIN_EMAIL=admin@tuisp.com
+        - MOODLE_URL=${MOODLE_URL}
+        - MOODLE_DB_HOST=${MOODLE_DB_HOST}
+        - MOODLE_DB_NAME=${MOODLE_DB_NAME}
+        - MOODLE_DB_USER=${MOODLE_DB_USER}
+        - MOODLE_DB_PASSWORD=${MOODLE_DB_PASSWORD}
+        - MOODLE_SITE_FULLNAME=${MOODLE_SITE_FULLNAME}
+        - MOODLE_SITE_SHORTNAME=${MOODLE_SITE_SHORTNAME}
+        - MOODLE_ADMIN_USER=${MOODLE_ADMIN_USER}
+        - MOODLE_ADMIN_PASSWORD=${MOODLE_ADMIN_PASSWORD}
+        - MOODLE_ADMIN_EMAIL=${MOODLE_ADMIN_EMAIL}
+
     volumes:
       # Persistencia de moodledata (archivos subidos por usuarios)
       - moodledata_vol:/var/www/moodledata
@@ -35,9 +36,9 @@ services:
     restart: always
     environment:
       - MARIADB_DATABASE=moodle
-      - MARIADB_USER=moodleuser
-      - MARIADB_PASSWORD=password_seguro
-      - MARIADB_ROOT_PASSWORD=root_password_super_seguro
+      - MARIADB_USER=${MOODLE_DB_USER}
+      - MARIADB_PASSWORD=${MOODLE_DB_USER}
+      - MARIADB_ROOT_PASSWORD=${MOODLE_DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -51,15 +52,9 @@ services:
       - db
       - web
     environment:
-      # 1. Configuración de S3 (Donde se guardará)
-      - AWS_ACCESS_KEY_ID=TU_ACCESS_KEY
-      - AWS_SECRET_ACCESS_KEY=TU_SECRET_KEY
-      - AWS_S3_BUCKET_NAME=nombre-de-tu-bucket-moodle
-      # Si usas AWS usa: s3.amazonaws.com
-      # Si usas otro, pon su endpoint (ej. s3.wasabisys.com)
-      - AWS_ENDPOINT=https://s3.amazonaws.com
-      - AWS_S3_PATH=backup-moodle-isp
-
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
       # 2. Programación (Ejemplo: Todos los días a las 3:00 AM)
       - BACKUP_CRON_EXPRESSION=0 3 * * *
       - BACKUP_FILENAME=backup-moodle-%Y-%m-%dT%H-%M-%S.tar.gz
