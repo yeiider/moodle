@@ -35,10 +35,10 @@ services:
     container_name: moodle_custom_db
     restart: always
     environment:
-      - MARIADB_DATABASE=moodle
+      - MARIADB_DATABASE=${MOODLE_DB_NAME}
       - MARIADB_USER=${MOODLE_DB_USER}
       - MARIADB_PASSWORD=${MOODLE_DB_PASSWORD}
-      - MARIADB_ROOT_PASSWORD=${MOODLE_DB_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     networks:
