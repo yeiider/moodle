@@ -47,6 +47,9 @@ services:
     image: offen/docker-volume-backup:latest
     container_name: moodle_backup
     restart: always
+    depends_on:
+      - db
+      - web
     environment:
       # 1. Configuración de S3 (Donde se guardará)
       - AWS_ACCESS_KEY_ID=TU_ACCESS_KEY
