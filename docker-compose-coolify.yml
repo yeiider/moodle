@@ -1,0 +1,69 @@
+services:
+  web:
+    build: .
+    container_name: moodle_custom_app
+    restart: always
+    ports:
+      - "8110:80"
+    environment:
+        - MOODLE_URL=${MOODLE_URL}
+        - MOODLE_DB_HOST=db
+        - MOODLE_DB_NAME=moodle
+        - MOODLE_DB_USER=moodleuser
+        - MOODLE_DB_PASSWORD=password_seguro
+        - MOODLE_SITE_FULLNAME=Moodle
+        - MOODLE_SITE_SHORTNAME=Instituto
+        - MOODLE_ADMIN_USER=admin
+        - MOODLE_ADMIN_PASSWORD=Admin123!
+        - MOODLE_ADMIN_EMAIL=admin@tuisp.com
+    volumes:
+      # Persistencia de moodledata (archivos subidos por usuarios)
+      - moodledata_vol:/var/www/moodledata
+      # Opcional: Si quieres desarrollar en vivo, descomenta esto,
+      # pero ten cuidado con los permisos de archivo en Portainer.
+      # - ./:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.11
+    container_name: moodle_custom_db
+    restart: always
+    environment:
+      - MARIADB_DATABASE=moodle
+      - MARIADB_USER=moodleuser
+      - MARIADB_PASSWORD=password_seguro
+      - MARIADB_ROOT_PASSWORD=root_password_super_seguro
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backup:
+    image: offen/docker-volume-backup:latest
+    container_name: moodle_backup
+    restart: always
+    depends_on:
+      - db
+      - web
+    environment:
+      # Credenciales AWS S3
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      # Variables necesarias para el script de dump
+      - MOODLE_DB_USER=moodleuser # Corregido: antes decía 'moodle', debe coincidir con el usuario de la BD
+      - MOODLE_DB_PASSWORD=password_seguro
+      - MOODLE_DB_NAME=moodle
+      # Configuración Backup
+      - BACKUP_CRON_EXPRESSION=0 3 * * *
+      - BACKUP_FILENAME=backup-moodle-%Y-%m-%dT%H-%M-%S.tar.gz
+      - BACKUP_RETENTION_DAYS=7
+      - BACKUP_PRERUN_SCRIPT=apk add --no-cache mariadb-client && mysqldump -h db -u $MOODLE_DB_USER -p$MOODLE_DB_PASSWORD $MOODLE_DB_NAME > /backup/source/db_dump.sql
+    volumes:
+      - moodledata_vol:/backup/source/moodledata:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+volumes:
+  moodledata_vol:
+  db_data:
