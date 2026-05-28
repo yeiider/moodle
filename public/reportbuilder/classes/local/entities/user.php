@@ -405,7 +405,6 @@ class user extends base {
             'confirmed' => new lang_string('confirmed', 'admin'),
             'username' => new lang_string('username'),
             'auth' => new lang_string('authentication', 'moodle'),
-            'moodlenetprofile' => new lang_string('moodlenetprofile', 'user'),
             'timecreated' => new lang_string('timecreated', 'core_reportbuilder'),
             'timemodified' => new lang_string('timemodified', 'core_reportbuilder'),
             'lastip' => new lang_string('lastip'),
@@ -555,7 +554,7 @@ class user extends base {
         $authlist = array_keys(core_component::get_plugin_list('auth'));
 
         return array_map(
-            fn(string $auth) => get_auth_plugin($auth)->get_title(),
+            fn(string $auth) => \core\di::get(\core\authentication::class)->get_plugin($auth)->get_title(),
             array_combine($authlist, $authlist),
         );
     }

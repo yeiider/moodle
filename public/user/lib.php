@@ -68,7 +68,7 @@ function user_create_user($user, $updatepassword = true, $triggerevent = true) {
     if ($updatepassword && isset($user->password)) {
 
         // Check password toward the password policy.
-        if (!check_password_policy($user->password, $errmsg, $user)) {
+        if (!\core\di::get(\core\authentication\password::class)->check_policy($user->password, $errmsg, $user)) {
             throw new moodle_exception($errmsg);
         }
 
@@ -128,7 +128,7 @@ function user_create_user($user, $updatepassword = true, $triggerevent = true) {
     if (isset($userpassword)) {
         // Get full database user row, in case auth is default.
         $newuser = $DB->get_record('user', array('id' => $newuserid));
-        $authplugin = get_auth_plugin($newuser->auth);
+        $authplugin = \core\di::get(\core\authentication::class)->get_plugin($newuser->auth);
         $authplugin->user_update_password($newuser, $userpassword);
     }
 
@@ -185,7 +185,7 @@ function user_update_user($user, $updatepassword = true, $triggerevent = true) {
     if ($updatepassword && isset($user->password)) {
 
         // Check password toward the password policy.
-        if (!check_password_policy($user->password, $errmsg, $user)) {
+        if (!\core\di::get(\core\authentication\password::class)->check_policy($user->password, $errmsg, $user)) {
             throw new moodle_exception($errmsg);
         }
 
@@ -242,7 +242,7 @@ function user_update_user($user, $updatepassword = true, $triggerevent = true) {
 
         // If password was set, then update its hash.
         if (isset($passwd)) {
-            $authplugin = get_auth_plugin($currentrecord->auth);
+            $authplugin = \core\di::get(\core\authentication::class)->get_plugin($currentrecord->auth);
             if ($authplugin->can_change_password()) {
                 $authplugin->user_update_password($currentrecord, $passwd);
             }
@@ -815,6 +815,33 @@ function user_convert_text_to_menu_items($text, $page) {
 }
 
 /**
+ * Returns available default homepage options for user preferences.
+ *
+ * @return array
+ */
+function user_get_default_homepage_options(): array {
+    global $CFG;
+
+    $options = [];
+    if (!isset($CFG->enablemyhome) || $CFG->enablemyhome) {
+        $options[HOMEPAGE_SITE] = new lang_string('home');
+    }
+    if (!isset($CFG->enabledashboard) || $CFG->enabledashboard) {
+        $options[HOMEPAGE_MY] = new lang_string('mymoodle', 'admin');
+    }
+    if (!isset($CFG->enablemycourses) || $CFG->enablemycourses) {
+        $options[HOMEPAGE_MYCOURSES] = new lang_string('mycourses', 'admin');
+    }
+
+    // Allow hook callbacks to extend options.
+    $hook = new \core_user\hook\extend_default_homepage(true);
+    \core\di::get(\core\hook\manager::class)->dispatch($hook);
+    $options += $hook->get_options();
+
+    return $options;
+}
+
+/**
  * Get a list of essential user navigation items.
  *
  * @param stdclass $user user object.
@@ -1121,13 +1148,16 @@ function user_is_previously_used_password($userid, $password) {
  *
  * @param string $uuid The device UUID.
  * @param string $appid The app id. If empty all the devices matching the UUID for the user will be removed.
+ * @param int|null $userid The user id. If null, the current user will be used.
  * @return bool true if removed, false if the device didn't exists in the database
  * @since Moodle 2.9
  */
-function user_remove_user_device($uuid, $appid = "") {
+function user_remove_user_device($uuid, $appid = "", $userid = null) {
     global $DB, $USER;
 
-    $conditions = array('uuid' => $uuid, 'userid' => $USER->id);
+    $userid ??= $USER->id;
+
+    $conditions = ['uuid' => $uuid, 'userid' => $userid];
     if (!empty($appid)) {
         $conditions['appid'] = $appid;
     }

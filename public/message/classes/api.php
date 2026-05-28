@@ -329,6 +329,7 @@ class api {
                 // Otherwise it means that the $USER was not allowed to search the returned user.
                 if (!empty($userdetails) and !empty($userdetails['fullname'])) {
                     // We know we've matched, but only save the record if it's within the offset area we need.
+                    $user->initials = \core_user::get_initials($user);
                     if ($limitfrom == 0) {
                         // No offset specified, so just save.
                         $returnedusers[$id] = $user;
@@ -1513,7 +1514,10 @@ class api {
                 return $member->id != $userid;
             });
             $otheruser = reset($otheruser);
-
+            // Check if the user still exists in the system.
+            if (!$otheruser || !\core\user::is_real_user($otheruser->id, true)) {
+                return false;
+            }
             return self::can_contact_user($otheruser->id, $userid);
         } else {
             throw new \moodle_exception("Invalid conversation type '$conversation->type'.");
